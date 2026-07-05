@@ -1,0 +1,8 @@
+<svg width="320" height="96" viewBox="0 0 320 96" xmlns="http://www.w3.org/2000/svg">
+  <g transform="translate(10, 8) rotate(-6 40 40)">
+    <circle cx="40" cy="40" r="34" fill="none" stroke="#C1442B" stroke-width="3.5"/>
+    <circle cx="40" cy="40" r="26" fill="none" stroke="#C1442B" stroke-width="1.5" stroke-dasharray="3 4"/>
+    <path d="M24 41 L34 51 L57 26" fill="none" stroke="#C1442B" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+  <text x="98" y="55" font-family="'IBM Plex Mono', ui-monospace, monospace" font-weight="600" font-size="34" letter-spacing="-0.5" fill="currentColor">VerifAI<tspan fill="#C1442B">.</tspan></text>
+</svg>
