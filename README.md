@@ -11,3 +11,12 @@
 <p align="center">
   <img src="appdemo.gif" width="1000" alt="App Demo">
 </p>
+
+---
+
+## How to Run Locally
+
+To spin up a local development server and view the project in your browser, run the following command in your terminal:
+
+```bash
+python3 -m http.server 8000
