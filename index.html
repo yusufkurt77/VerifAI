@@ -1,0 +1,626 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VerifAI — a live fact-check desk</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Source+Serif+4:opsz,wght@8..60,400;8..60,500;8..60,600;8..60,700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --ink-bg: #1B2027;
+    --ink-bg-2: #20272F;
+    --panel: #242B35;
+    --panel-2: #2B3340;
+    --rule: rgba(237,234,226,0.14);
+    --rule-strong: rgba(237,234,226,0.28);
+    --ink-text: #EDEAE2;
+    --ink-text-dim: #A9AFB8;
+    --paper: #E7E1CC;
+    --paper-2: #DED6BC;
+    --paper-text: #2A241A;
+    --paper-text-dim: #5C5544;
+    --rust: #C1442B;
+    --rust-dim: #8F3220;
+    --sage: #4F7A5D;
+    --sage-dim: #3B5C46;
+    --amber: #C89A3E;
+    --amber-dim: #96742C;
+
+    --font-mono: 'IBM Plex Mono', ui-monospace, monospace;
+    --font-serif: 'Source Serif 4', Georgia, serif;
+  }
+
+  * { box-sizing: border-box; }
+
+  html, body {
+    margin: 0;
+    padding: 0;
+    background: var(--ink-bg);
+    color: var(--ink-text);
+    font-family: var(--font-serif);
+  }
+
+  body {
+    background-image:
+      radial-gradient(circle at 12% 8%, rgba(255,255,255,0.035), transparent 45%),
+      radial-gradient(circle at 90% 85%, rgba(255,255,255,0.03), transparent 40%);
+  }
+
+  a { color: inherit; }
+
+  ::selection { background: var(--amber); color: #1B1600; }
+
+  *:focus-visible {
+    outline: 2px solid var(--amber);
+    outline-offset: 2px;
+  }
+
+  .wrap {
+    max-width: 1180px;
+    margin: 0 auto;
+    padding: 44px 28px 90px;
+  }
+
+  /* ---------- Header ---------- */
+  header.masthead {
+    border-bottom: 1px solid var(--rule-strong);
+    padding-bottom: 26px;
+    margin-bottom: 36px;
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 24px;
+    flex-wrap: wrap;
+  }
+
+  .eyebrow {
+    font-family: var(--font-mono);
+    font-size: 11.5px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--amber);
+    margin-bottom: 10px;
+  }
+
+  h1.title {
+    font-family: var(--font-mono);
+    font-weight: 600;
+    font-size: clamp(30px, 4.4vw, 46px);
+    letter-spacing: -0.01em;
+    margin: 0;
+    line-height: 1;
+  }
+
+  h1.title span.dot { color: var(--rust); }
+
+  .masthead-note {
+    font-family: var(--font-serif);
+    font-style: italic;
+    color: var(--ink-text-dim);
+    font-size: 15px;
+    max-width: 340px;
+    text-align: right;
+    line-height: 1.5;
+  }
+
+  /* ---------- Layout ---------- */
+  .desk {
+    display: grid;
+    grid-template-columns: minmax(0, 0.86fr) minmax(0, 1.14fr);
+    gap: 30px;
+    align-items: start;
+  }
+
+  @media (max-width: 880px) {
+    .desk { grid-template-columns: 1fr; }
+    .masthead-note { display: none; }
+  }
+
+  .panel {
+    background: var(--panel);
+    border: 1px solid var(--rule);
+    border-radius: 3px;
+  }
+
+  .panel-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--rule);
+  }
+
+  .panel-head h2 {
+    font-family: var(--font-mono);
+    font-size: 13px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    margin: 0;
+    color: var(--ink-text-dim);
+    font-weight: 600;
+  }
+
+  /* ---------- Intake (left) ---------- */
+  .intake-body { padding: 20px; }
+
+  textarea#article {
+    width: 100%;
+    min-height: 300px;
+    resize: vertical;
+    background: var(--paper);
+    color: var(--paper-text);
+    border: 1px solid var(--paper-2);
+    border-radius: 2px;
+    padding: 18px 20px;
+    font-family: var(--font-serif);
+    font-size: 16px;
+    line-height: 1.65;
+    background-image: repeating-linear-gradient(
+      transparent, transparent 31px, var(--paper-2) 32px
+    );
+  }
+
+  textarea#article::placeholder { color: var(--paper-text-dim); }
+
+  .intake-meta {
+    display: flex;
+    justify-content: space-between;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--ink-text-dim);
+    margin-top: 8px;
+    letter-spacing: 0.02em;
+  }
+
+  .examples {
+    display: flex;
+    gap: 10px;
+    margin-top: 16px;
+    flex-wrap: wrap;
+  }
+
+  .chip {
+    font-family: var(--font-mono);
+    font-size: 11.5px;
+    letter-spacing: 0.03em;
+    background: transparent;
+    color: var(--ink-text-dim);
+    border: 1px solid var(--rule-strong);
+    padding: 7px 12px;
+    border-radius: 20px;
+    cursor: pointer;
+    transition: border-color .15s ease, color .15s ease;
+  }
+  .chip:hover { border-color: var(--amber); color: var(--amber); }
+
+  .run-row {
+    margin-top: 22px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+
+  .settings {
+    margin-top: 20px;
+    padding-top: 18px;
+    border-top: 1px solid var(--rule);
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+  }
+
+  .settings-group {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding: 14px 15px;
+    border: 1px solid var(--rule);
+    border-radius: 3px;
+    background: var(--panel-2);
+  }
+
+  .settings-group-title {
+    font-family: var(--font-mono);
+    font-size: 11.5px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--amber);
+  }
+  .settings-group-title span {
+    color: var(--ink-text-dim);
+    text-transform: none;
+    letter-spacing: 0;
+    font-style: italic;
+  }
+
+  .platform-warning {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--rust);
+    line-height: 1.5;
+  }
+
+  .field {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .field label {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--ink-text-dim);
+  }
+
+  .field select,
+  .field input[type="password"],
+  .field input[type="text"] {
+    font-family: var(--font-mono);
+    font-size: 13.5px;
+    background: var(--panel);
+    color: var(--ink-text);
+    border: 1px solid var(--rule-strong);
+    border-radius: 2px;
+    padding: 9px 11px;
+  }
+
+  .field select:focus,
+  .field input:focus {
+    border-color: var(--amber);
+  }
+
+  .field-note {
+    font-family: var(--font-mono);
+    font-size: 10.5px;
+    color: var(--ink-text-dim);
+    opacity: 0.75;
+    line-height: 1.5;
+  }
+
+  button#run {
+    font-family: var(--font-mono);
+    font-weight: 600;
+    font-size: 14px;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    background: var(--rust);
+    color: #FBF3EE;
+    border: 2px solid var(--rust);
+    border-radius: 2px;
+    padding: 13px 22px;
+    cursor: pointer;
+    transition: transform .12s ease, background .15s ease;
+  }
+  button#run:hover { background: var(--rust-dim); border-color: var(--rust-dim); }
+  button#run:active { transform: translateY(1px); }
+  button#run:disabled {
+    background: transparent;
+    color: var(--ink-text-dim);
+    border-color: var(--rule-strong);
+    cursor: default;
+  }
+
+  .run-status {
+    font-family: var(--font-mono);
+    font-size: 12.5px;
+    color: var(--ink-text-dim);
+  }
+  .run-status.err { color: var(--rust); }
+
+  .spinner {
+    width: 13px; height: 13px;
+    border-radius: 50%;
+    border: 2px solid var(--rule-strong);
+    border-top-color: var(--amber);
+    display: none;
+    animation: spin 0.8s linear infinite;
+  }
+  .spinner.on { display: inline-block; vertical-align: -2px; margin-right: 8px; }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* ---------- Ledger (right) ---------- */
+  .ledger-body { padding: 22px 22px 8px; }
+
+  .stage {
+    display: grid;
+    grid-template-columns: 34px 1fr;
+    gap: 16px;
+    position: relative;
+  }
+
+  .stage-rail {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .stage-num {
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    border: 1.5px solid var(--rule-strong);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--ink-text-dim);
+    background: var(--panel);
+    flex-shrink: 0;
+    transition: all .2s ease;
+  }
+  .stage.active .stage-num {
+    border-color: var(--amber);
+    color: var(--amber);
+  }
+  .stage.done .stage-num {
+    border-color: var(--sage);
+    color: var(--sage);
+    background: var(--sage);
+    color: #0E1712;
+  }
+  .stage.err .stage-num {
+    border-color: var(--rust);
+    color: var(--rust);
+  }
+
+  .stage-line {
+    width: 1.5px;
+    flex: 1;
+    background: var(--rule-strong);
+    margin: 2px 0;
+    min-height: 20px;
+  }
+  .stage:last-child .stage-line { display: none; }
+
+  .stage-content { padding-bottom: 30px; }
+
+  .stage-title {
+    font-family: var(--font-mono);
+    font-size: 13.5px;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--ink-text-dim);
+    padding-top: 4px;
+    margin-bottom: 4px;
+  }
+  .stage.active .stage-title, .stage.done .stage-title { color: var(--ink-text); }
+
+  .stage-sub {
+    font-size: 14px;
+    color: var(--ink-text-dim);
+    font-style: italic;
+    margin-bottom: 12px;
+  }
+
+  .empty-note {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--ink-text-dim);
+    opacity: 0.6;
+    padding: 2px 0 4px;
+  }
+
+  /* fact/question rows */
+  .fact-row {
+    border-left: 2px solid var(--rule-strong);
+    padding: 8px 0 8px 14px;
+    margin-bottom: 10px;
+  }
+  .fact-row .q {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--amber);
+    margin-bottom: 3px;
+  }
+  .fact-row .f {
+    font-size: 15.5px;
+    line-height: 1.5;
+  }
+  .fact-row .f u { text-decoration-color: var(--rust); text-decoration-thickness: 2px; }
+
+  /* search findings */
+  .find-row {
+    padding: 10px 0;
+    border-top: 1px dashed var(--rule);
+  }
+  .find-row:first-child { border-top: none; }
+  .find-q {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--ink-text-dim);
+    margin-bottom: 4px;
+  }
+  .find-a { font-size: 14.5px; line-height: 1.55; margin-bottom: 4px; }
+  .find-src {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--sage);
+  }
+
+  /* verdicts */
+  .verdict-row {
+    display: grid;
+    grid-template-columns: 96px 1fr;
+    gap: 16px;
+    align-items: start;
+    padding: 14px 0;
+    border-top: 1px solid var(--rule);
+  }
+  .verdict-row:first-child { border-top: none; }
+
+  .stamp {
+    font-family: var(--font-mono);
+    font-weight: 700;
+    font-size: 11px;
+    letter-spacing: 0.06em;
+    text-align: center;
+    padding: 7px 4px;
+    border-radius: 6px;
+    border: 2.5px double;
+    transform: rotate(-5deg);
+    user-select: none;
+    line-height: 1.2;
+  }
+  .stamp.verified { color: var(--sage); border-color: var(--sage); background: rgba(79,122,93,0.08); }
+  .stamp.conflict { color: var(--rust); border-color: var(--rust); background: rgba(193,68,43,0.08); transform: rotate(4deg); }
+  .stamp.unclear  { color: var(--amber); border-color: var(--amber); background: rgba(200,154,62,0.08); transform: rotate(-2deg); }
+
+  @media (prefers-reduced-motion: reduce) {
+    .stamp { transform: none; }
+    .spinner { animation: none; }
+  }
+
+  .verdict-text .vf { font-size: 15px; margin-bottom: 3px; }
+  .verdict-text .vn { font-size: 13.5px; color: var(--ink-text-dim); line-height: 1.5; }
+
+  /* ---------- Summary ---------- */
+  .summary {
+    margin-top: 30px;
+    background: var(--paper);
+    color: var(--paper-text);
+    border-radius: 3px;
+    padding: 26px 28px;
+    display: none;
+  }
+  .summary.show { display: block; }
+
+  .summary-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    border-bottom: 1.5px solid var(--paper-text);
+    padding-bottom: 10px;
+    margin-bottom: 14px;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .summary-head h2 {
+    font-family: var(--font-mono);
+    font-size: 15px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    margin: 0;
+  }
+  .summary-tally {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--paper-text-dim);
+  }
+  .summary-tally b.sv { color: var(--sage-dim); }
+  .summary-tally b.sc { color: var(--rust-dim); }
+  .summary-tally b.su { color: var(--amber-dim); }
+
+  .summary-text { font-size: 15.5px; line-height: 1.7; }
+  .summary-text p { margin: 0 0 12px; }
+
+  footer {
+    margin-top: 50px;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--ink-text-dim);
+    text-align: center;
+    letter-spacing: 0.03em;
+  }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+
+  <header class="masthead">
+    <div>
+      <div class="eyebrow">Fact-check desk</div>
+      <h1 class="title">VerifAI<span class="dot">.</span></h1>
+    </div>
+    <div class="masthead-note">Paste a passage. It gets read, its claims get pulled into the margin, and each one is checked against what's actually out there.</div>
+  </header>
+
+  <div class="desk">
+
+    <!-- LEFT: INTAKE -->
+    <div class="panel">
+      <div class="panel-head"><h2>Intake</h2></div>
+      <div class="intake-body">
+        <textarea id="article" placeholder="Paste an article, report, or passage here…"></textarea>
+        <div class="intake-meta">
+          <span id="wordcount">0 words</span>
+          <span>plain text only</span>
+        </div>
+        <div class="examples">
+          <button class="chip" id="ex-clean">Load an accurate passage</button>
+          <button class="chip" id="ex-flawed">Load a passage with errors</button>
+        </div>
+
+        <div class="settings">
+
+          <div class="settings-group" id="llm-settings" data-section="llm" data-title="LLM — extraction &amp; verdicts"></div>
+
+          <div class="settings-group" id="search-settings" data-section="search" data-title="Web search — live source lookup"></div>
+
+          <div class="field-note">Kept in this tab's memory only — never saved, never sent anywhere but the provider you pick. Some providers restrict direct browser requests; if a call fails right away, check the browser console.</div>
+        </div>
+
+        <div class="run-row">
+          <button id="run">Run the check</button>
+          <div class="run-status" id="status"><span class="spinner" id="spinner"></span>Waiting for text</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- RIGHT: LEDGER -->
+    <div class="panel">
+      <div class="panel-head"><h2>Ledger</h2></div>
+      <div class="ledger-body" id="ledger">
+
+        <div class="stage" id="stage-1">
+          <div class="stage-rail"><div class="stage-num">1</div><div class="stage-line"></div></div>
+          <div class="stage-content">
+            <div class="stage-title">Extract</div>
+            <div class="stage-sub">Pull the checkable claims out of the passage and phrase each as a question.</div>
+            <div id="extract-out"><div class="empty-note">Nothing yet — run the check to begin.</div></div>
+          </div>
+        </div>
+
+        <div class="stage" id="stage-2">
+          <div class="stage-rail"><div class="stage-num">2</div><div class="stage-line"></div></div>
+          <div class="stage-content">
+            <div class="stage-title">Search</div>
+            <div class="stage-sub">Answer each question independently, using live web sources.</div>
+            <div id="search-out"><div class="empty-note">Waiting on extraction.</div></div>
+          </div>
+        </div>
+
+        <div class="stage" id="stage-3">
+          <div class="stage-rail"><div class="stage-num">3</div></div>
+          <div class="stage-content">
+            <div class="stage-title">Verdict</div>
+            <div class="stage-sub">Weigh each original claim against what the search turned up.</div>
+            <div id="verdict-out"><div class="empty-note">Waiting on search results.</div></div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <div class="summary" id="summary">
+    <div class="summary-head">
+      <h2>Evaluation report</h2>
+      <div class="summary-tally" id="tally"></div>
+    </div>
+    <div class="summary-text" id="summary-text"></div>
+  </div>
+
+  <footer>verifai — reads a passage, checks it against the open web, shows its work</footer>
+</div>
+
+<script src="app.js"></script>
+
+</body>
+</html>
